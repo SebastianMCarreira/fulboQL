@@ -18,7 +18,7 @@ def validate_players_inside_of_match(match, timestamp, players, teams=None):
     for player in players:
         validate_player_inside_of_match(match, timestamp, player, teams=teams)
 
-def validate_player_inside_of_match(match, timestamp, player, teams=None):
+def validate_player_inside_of_match(match, timestamp, player, teams=None, as_substitute=False):
     if type(match) is int:
         match = Match.query.filter(Match.id == match).first()
     if type(player) is int:
@@ -43,11 +43,18 @@ def validate_player_inside_of_match(match, timestamp, player, teams=None):
                         TimeStamp(event.timestamp) < TimeStamp(timestamp),
                     match.events))
     field_players_ids = [player.id for player in team.titulars]
+    bench_players_ids = [player.id for player in team.substitutes]
     for substitution in substitutions:
         field_players_ids.remove(substitution.substitution.outPlayer_id)
         field_players_ids.append(substitution.substitution.inPlayer_id)
-    if player.id not in field_players_ids:
-        abort(400,"The player with id {} was at the substitute bank at the timestamp {}".format(player.id, timestamp))
+        bench_players_ids.remove(substitution.substitution.inPlayer_id)
+        bench_players_ids.append(substitution.substitution.outPlayer_id)
+    
+    if player.id not in field_players_ids and not as_substitute:
+        abort(400,"The player with id {} was at the substitute bench at the timestamp {}".format(player.id, timestamp))
+    elif player.id not in bench_players_ids and as_substitute:
+        abort(400,"The player with id {} was inside of the field at the timestamp {}".format(player.id, timestamp))
+
         
 
     

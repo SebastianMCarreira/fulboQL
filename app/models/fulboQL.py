@@ -335,6 +335,12 @@ class OnGoal(db.Model, ApiModel):
             'penalty': self.penalty
         }
 
+    def involved_players_ids(self):
+        involved_players = [self.shooter_id, self.goalkeeper_id]
+        if self.assist_id:
+            involved_players.append(self.assist_id)
+        return involved_players
+
 class RestartTypes(str, Enum):
     FREEKICK = "FREEKICK"
     PENALTY = "PENALTY"

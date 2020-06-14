@@ -122,9 +122,12 @@ def clubId(id):
 def club_add_player(id, player_id):
     club = db.session.query(Club).filter(Club.id == id)[0]
     player = db.session.query(Player).filter(Player.id == player_id)[0]
-    player.club_id = club.id
-    db.session.commit()
-    return json_response(club), 201
+    if player.club_id != club.id:
+        player.club_id = club.id
+        db.session.commit()
+        return json_response(club), 201
+    else:
+        return abort(400, "Player with id {} already belongs to that club.".format(player_id))
 
 
 # player
@@ -132,8 +135,7 @@ def club_add_player(id, player_id):
 @login_required
 def player():
     if request.method == 'POST':
-        if not Player.verifyProperties(request.json):
-            return abort(400)
+        validate_required_properties(Player,request)
         new_player = Player(name=(request.json['name']),
           surname=(request.json['surname']),
           position=(request.json['position']))
@@ -153,8 +155,7 @@ def playerId(id):
     if request.method == 'GET':
         return json_response(player), 200
     if request.method == 'PUT':
-        if not Player.verifyProperties(request.json):
-            abort(400)
+        validate_required_properties(Player,request)
         player.name = request.json['name']
         player.surname = request.json['surname']
         player.position = request.json['position']
@@ -173,8 +174,7 @@ def playerId(id):
 @login_required
 def team():
     if request.method == 'POST':
-        if not Team.verifyProperties(request.json):
-            return abort(400)
+        validate_required_properties(Team,request)
         club = db.session.query(Club).filter(Club.id == request.json['club'])[0]
         new_team = Team(club=(request.json['club']),
           manager=(request.json['manager']))
@@ -200,8 +200,7 @@ def teamId(id):
     if request.method == 'GET':
         return json_response(team), 200
     if request.method == 'PUT':
-        if not Team.verifyProperties(request.json):
-            abort(400)
+        validate_required_properties(Team,request)
         team.club = request.json['club']
         team.manager = request.json['manager']
         db.session.commit()
@@ -211,42 +210,12 @@ def teamId(id):
         db.session.commit()
         return jsonify({'message': 'team deleted'}), 200
 
-
-@api_blueprint.route('/api/team/<id>/titulars/<player_id>/', methods=['PUT', 'DELETE'])
-@login_required
-def team_add_titulars(id, player_id):
-    team = db.session.query(Team).filter(Team.id == id)[0]
-    club = db.session.query(Club).filter(Club.id == team.club)[0]
-    player = list(filter(lambda x: x.id == int(player_id), club.players))[0]
-    if request.method == 'PUT':
-        team.titulars.append(player)
-    elif request.method == 'DELETE':
-        team.titulars.remove(player)
-    db.session.commit()
-    return json_response(team), 200
-
-
-@api_blueprint.route('/api/team/<id>/substitutes/<player_id>/', methods=['PUT', 'DELETE'])
-@login_required
-def team_add_substitutes(id, player_id):
-    team = db.session.query(Team).filter(Team.id == id)[0]
-    club = db.session.query(Club).filter(Club.id == team.club)[0]
-    player = list(filter(lambda x: x.id == int(player_id), club.players))[0]
-    if request.method == 'PUT':
-        team.substitutes.append(player)
-    elif request.method == 'DELETE':
-        team.substitutes.remove(player)
-    db.session.commit()
-    return json_response(team), 200
-
-
 # match
 @api_blueprint.route('/api/match/', methods=['GET', 'POST'])
 @login_required
 def match():
     if request.method == 'POST':
-        if not Match.verifyProperties(request.json):
-            return abort(400)
+        validate_required_properties(Match,request)
         new_match = Match(teamA=(request.json['teamA']),
           teamB=(request.json['teamB']),
           dateOfStart=(request.json['dateOfStart']),
@@ -265,8 +234,7 @@ def matchId(id):
     if request.method == 'GET':
         return json_response(match), 200
     if request.method == 'PUT':
-        if not Match.verifyProperties(request.json):
-            abort(400)
+        validate_required_properties(Match,request)
         match.teamA = request.json['teamA']
         match.teamB = request.json['teamB']
         match.dateOfStart = request.json['dateOfStart']
@@ -294,8 +262,7 @@ def foul(match_id, timestamp):
         reportedBy=current_user.id,
         match=match_id
     )
-    if not Foul.verifyProperties(request.json):
-            return abort(400)
+    validate_required_properties(Foul,request)
     new_foul = Foul(
         punishment=request.json["punishment"],
         foulType=request.json["foulType"],
@@ -321,12 +288,12 @@ def highlight(match_id, timestamp):
         reportedBy=current_user.id,
         match=match_id
     )
-    if not Highlight.verifyProperties(request.json):
-        return abort(400)
+    validate_required_properties(Highlight,request)
     new_highlight = Highlight(
         description=request.json["description"]
     )
     players = db.session.query(Player).filter(Player.id.in_(request.json["players"])).all()
+    validate_players_inside_of_match(match, timestamp, players)
     for player in players:
         new_highlight.players.append(player)
     db.session.add(new_highlight)
@@ -344,8 +311,7 @@ def matchmoment(match_id, timestamp):
         reportedBy=current_user.id,
         match=match_id
     )
-    if not MatchMoment.verifyProperties(request.json):
-            return abort(400)
+    validate_required_properties(MatchMoment,request)
     new_matchmoment = MatchMoment(
         momentType=request.json["momentType"]
     )
@@ -364,8 +330,7 @@ def ongoal(match_id, timestamp):
         reportedBy=current_user.id,
         match=match_id
     )
-    if not OnGoal.verifyProperties(request.json):
-            return abort(400)
+    validate_required_properties(OnGoal,request)
     new_ongoal = OnGoal(
         shooter_id=request.json["shooter_id"],
         goalkeeper_id=request.json["goalkeeper_id"],
@@ -374,6 +339,7 @@ def ongoal(match_id, timestamp):
     )
     if "assist_id" in request.json:
         new_ongoal.assist_id = request.json["assist_id"]
+    validate_players_inside_of_match(match, timestamp, new_ongoal.involved_players_ids())
     db.session.add(new_ongoal)
     new_event.ongoal = new_ongoal
     db.session.add(new_event)
@@ -389,8 +355,7 @@ def restart(match_id, timestamp):
         reportedBy=current_user.id,
         match=match_id
     )
-    if not Restart.verifyProperties(request.json):
-            return abort(400)
+    validate_required_properties(Restart,request)
     validate_player_inside_of_match(match, timestamp, request.json["executor_id"])
     new_restart = Restart(
         restartType=request.json["restartType"],
@@ -411,8 +376,9 @@ def substitution(match_id, timestamp):
         reportedBy=current_user.id,
         match=match_id
     )
-    if not Substitution.verifyProperties(request.json):
-            return abort(400)
+    validate_required_properties(Substitution,request)
+    validate_player_inside_of_match(match, timestamp, request.json["outPlayer_id"])
+    validate_player_inside_of_match(match, timestamp, request.json["inPlayer_id"], as_substitute=True)
     new_substitution = Substitution(
         inPlayer_id=request.json["inPlayer_id"],
         outPlayer_id=request.json["outPlayer_id"]
@@ -432,8 +398,8 @@ def injury(match_id, timestamp):
         reportedBy=current_user.id,
         match=match_id
     )
-    if not Injury.verifyProperties(request.json):
-            return abort(400)
+    validate_required_properties(Injury,request)
+    validate_player_inside_of_match(match, timestamp, request.json["injured_id"])
     new_injury = Injury(
         injured_id=request.json["injured_id"],
         severity=request.json["severity"]
