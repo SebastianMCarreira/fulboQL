@@ -1,7 +1,6 @@
 from flask import Blueprint, redirect, render_template
 from flask import request, url_for, jsonify, abort
-from flask_user import current_user, roles_required
-from flask_login import login_user, login_required
+from flask_login import login_user, login_required, current_user
 from app import db
 from app.utils import json_response
 from app.models.fulboQL import Manager, Referee, Match, Team, Player, Club, Event, Foul

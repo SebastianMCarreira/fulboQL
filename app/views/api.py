@@ -3,6 +3,8 @@ from flask import request, url_for, jsonify, abort
 from flask_login import login_required, current_user
 from app import db
 from app.utils import json_response
+from app.utils.validators import validate_required_properties
+from app.utils.validators import validate_players_inside_of_match, validate_player_inside_of_match
 from app.models.fulboQL import Manager, Referee, Match, Team, Player, Club, Event, Foul
 from app.models.fulboQL import Highlight, MatchMoment, OnGoal, Restart, Substitution, Injury
 api_blueprint = Blueprint('api', __name__)
@@ -12,8 +14,7 @@ api_blueprint = Blueprint('api', __name__)
 @login_required
 def referee():
     if request.method == 'POST':
-        if not Referee.verifyProperties(request.json):
-            return abort(400)
+        validate_required_properties(Referee, request)
         new_referee = Referee(name=(request.json['name']),
           surname=(request.json['surname']))
         db.session.add(new_referee)
@@ -30,8 +31,7 @@ def refereeId(id):
     if request.method == 'GET':
         return json_response(referee), 200
     if request.method == 'PUT':
-        if not Referee.verifyProperties(request.json):
-            abort(400)
+        validate_required_properties(Referee, request)
         referee.name = request.json['name']
         referee.surname = request.json['surname']
         db.session.commit()
@@ -47,8 +47,7 @@ def refereeId(id):
 @login_required
 def manager():
     if request.method == 'POST':
-        if not Manager.verifyProperties(request.json):
-            return abort(400)
+        validate_required_properties(Manager, request)
         new_manager = Manager(
             name=(request.json['name']),
             surname=(request.json['surname']),
@@ -67,8 +66,7 @@ def managerId(id):
     if request.method == 'GET':
         return json_response(manager), 200
     if request.method == 'PUT':
-        if not Manager.verifyProperties(request.json):
-            abort(400)
+        validate_required_properties(Manager, request)
         manager.name = request.json['name']
         manager.surname = request.json['surname']
         manager.club_id = request.json['club']
@@ -85,8 +83,7 @@ def managerId(id):
 @login_required
 def club():
     if request.method == 'POST':
-        if not Club.verifyProperties(request.json):
-            return abort(400)
+        validate_required_properties(Club, request)
         new_club = Club(name=(request.json['name']),
           stadium=(request.json['stadium']),
           city=(request.json['city']))
@@ -104,8 +101,7 @@ def clubId(id):
     if request.method == 'GET':
         return json_response(club), 200
     if request.method == 'PUT':
-        if not Club.verifyProperties(request.json):
-            abort(400)
+        validate_required_properties(Club, request)
         club.name = request.json['name']
         club.stadium = request.json['stadium']
         club.city = request.json['city']
@@ -309,6 +305,7 @@ def foul(match_id, timestamp):
         new_foul.victim_id = request.json["victim_id"]
     if "restart" in request.json:
         new_foul.restart = request.json["restart"]
+    validate_players_inside_of_match(match, timestamp, new_foul.involved_players_ids())
     db.session.add(new_foul)
     new_event.foul = new_foul
     db.session.add(new_event)
@@ -325,7 +322,7 @@ def highlight(match_id, timestamp):
         match=match_id
     )
     if not Highlight.verifyProperties(request.json):
-            return abort(400)
+        return abort(400)
     new_highlight = Highlight(
         description=request.json["description"]
     )
@@ -394,6 +391,7 @@ def restart(match_id, timestamp):
     )
     if not Restart.verifyProperties(request.json):
             return abort(400)
+    validate_player_inside_of_match(match, timestamp, request.json["executor_id"])
     new_restart = Restart(
         restartType=request.json["restartType"],
         executor_id=request.json["executor_id"]

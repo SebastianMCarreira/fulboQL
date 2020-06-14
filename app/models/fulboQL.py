@@ -1,9 +1,7 @@
-from flask_user import UserMixin
-from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, validators
 from enum import Enum
 from app import db
 from app.models.user_models import User
+from .timestamp import TimeStamp
 
 class ApiModel():
     required_properties = []
@@ -125,6 +123,10 @@ class Team(db.Model, ApiModel):
     titulars = db.relationship('Player', secondary='players_teams')
     substitutes = db.relationship('Player', secondary='players_teams_substitutes')
 
+    @property
+    def players(self):
+        return self.titulars + self.substitutes
+
     required_properties = ["club","manager","titulars","substitutes"]
 
     @property
@@ -208,6 +210,15 @@ class Event(db.Model, ApiModel):
             output["injury"] = self.injury.serialized
         return output
 
+    def __lt__(a,b):
+        return TimeStamp(a.timestamp) < TimeStamp(b.timestamp)
+    
+    def __gt__(a,b):
+        return TimeStamp(a.timestamp) > TimeStamp(b.timestamp)
+
+    def __eq__(a,b):
+        return TimeStamp(a.timestamp) == TimeStamp(b.timestamp)
+
 class FoulPunishments(str, Enum):
     NONE = "NONE"
     WARNING = "WARNING"
@@ -245,6 +256,12 @@ class Foul(db.Model, ApiModel):
             'perpetrator': db.session.query(Player).filter(Player.id==self.perpetrator_id)[0].serialized,
             'victim': db.session.query(Player).filter(Player.id==self.victim_id)[0].serialized if self.victim_id else None
         }
+    
+    def involved_players_ids(self):
+        involved_players = [self.perpetrator_id]
+        if self.victim_id:
+            involved_players.append(self.victim_id)
+        return involved_players
 
 class HighlightsPlayers(db.Model, ApiModel):
     __tablename__ = 'highlights_players'
