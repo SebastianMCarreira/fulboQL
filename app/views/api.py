@@ -3,7 +3,7 @@ from flask import request, url_for, jsonify, abort
 from flask_login import login_required, current_user
 from app import db
 from app.utils import json_response
-from app.utils.validators import validate_required_properties
+from app.utils.validators import validate_required_properties, validate_players_teams
 from app.utils.validators import validate_players_inside_of_match, validate_player_inside_of_match
 from app.models.fulboQL import Manager, Referee, Match, Team, Player, Club, Event, Foul
 from app.models.fulboQL import Highlight, MatchMoment, OnGoal, Restart, Substitution, Injury
@@ -270,9 +270,11 @@ def foul(match_id, timestamp):
     )
     if "victim_id" in request.json:
         new_foul.victim_id = request.json["victim_id"]
+    _, _, players = validate_players_inside_of_match(match, timestamp, new_foul.involved_players_ids())
+    if len(new_foul.involved_players_ids()) > 1:
+        validate_players_teams(players, different_teams=True)
     if "restart" in request.json:
         new_foul.restart = request.json["restart"]
-    validate_players_inside_of_match(match, timestamp, new_foul.involved_players_ids())
     db.session.add(new_foul)
     new_event.foul = new_foul
     db.session.add(new_event)
@@ -339,7 +341,13 @@ def ongoal(match_id, timestamp):
     )
     if "assist_id" in request.json:
         new_ongoal.assist_id = request.json["assist_id"]
-    validate_players_inside_of_match(match, timestamp, new_ongoal.involved_players_ids())
+    _, _, players = validate_players_inside_of_match(match, timestamp, new_ongoal.involved_players_ids())
+    shooter = list(filter(lambda p: p.id == request.json["shooter_id"], players))[0]
+    goalkeeper = list(filter(lambda p: p.id == request.json["goalkeeper_id"], players))[0]
+    validate_players_teams((shooter,goalkeeper),different_teams=True)
+    if "assist_id" in request.json:
+        assist = list(filter(lambda p: p.id == request.json["assist_id"], players))[0]
+        validate_players_teams((shooter,assist),different_teams=False)
     db.session.add(new_ongoal)
     new_event.ongoal = new_ongoal
     db.session.add(new_event)
@@ -377,8 +385,9 @@ def substitution(match_id, timestamp):
         match=match_id
     )
     validate_required_properties(Substitution,request)
-    validate_player_inside_of_match(match, timestamp, request.json["outPlayer_id"])
-    validate_player_inside_of_match(match, timestamp, request.json["inPlayer_id"], as_substitute=True)
+    _, teams, player_out = validate_player_inside_of_match(match, timestamp, request.json["outPlayer_id"])
+    _, _, player_in = validate_player_inside_of_match(match, timestamp, request.json["inPlayer_id"], as_substitute=True, teams=teams)
+    validate_players_teams((player_in,player_out),different_teams=False)
     new_substitution = Substitution(
         inPlayer_id=request.json["inPlayer_id"],
         outPlayer_id=request.json["outPlayer_id"]

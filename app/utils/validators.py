@@ -17,6 +17,7 @@ def validate_players_inside_of_match(match, timestamp, players, teams=None):
         teams = Team.query.filter(Team.id.in_((match.teamA,match.teamB)))
     for player in players:
         validate_player_inside_of_match(match, timestamp, player, teams=teams)
+    return match, teams, players
 
 def validate_player_inside_of_match(match, timestamp, player, teams=None, as_substitute=False):
     if type(match) is int:
@@ -54,9 +55,13 @@ def validate_player_inside_of_match(match, timestamp, player, teams=None, as_sub
         abort(400,"The player with id {} was at the substitute bench at the timestamp {}".format(player.id, timestamp))
     elif player.id not in bench_players_ids and as_substitute:
         abort(400,"The player with id {} was inside of the field at the timestamp {}".format(player.id, timestamp))
+    return match, teams, player
 
-        
-
-    
-
-    
+def validate_players_teams(players, different_teams=False):
+    if type(players[0]) is int:
+        players = Player.query.filter(Player.id.in_(players))
+    if different_teams and players[0].club_id == players[1].club_id:
+        abort(400,"Players with ids {} and {} belong to the same team.".format(players[0].id,players[1].id))
+    elif not different_teams and players[0].club_id != players[1].club_id:
+        abort(400,"Players with ids {} and {} belong to different team.".format(players[0].id,players[1].id))
+    return players
