@@ -7,6 +7,10 @@ from .exceptions import InvalidCredentialsException, UsernameNotFoundException
 import os
 
 def generate_new_user(username, password, email, first_name, last_name, role=None):
+    '''
+        Generates a new user in the database with the given password hashed, the email
+        confirmation token generated and sends the email with the token.
+    '''
     if not role:
         role = find_or_create_role('user', u'User')
 
@@ -27,6 +31,10 @@ def generate_new_user(username, password, email, first_name, last_name, role=Non
     send_activation_email(new_user)
 
 def check_email_activation(user, activation_code):
+    '''
+        Verifies that the received activation token is valid and if it is, sets the email_confirmed
+        flag as True in the db.
+    '''
     if user.email_confirmation_token == activation_code:
         user.email_confirmed = True
         db.session.commit()
@@ -78,6 +86,10 @@ def find_or_create_role(name, label):
     return role
 
 def get_user_from_credentials(username, password):
+    '''
+        Verifies that the given credentials are valid and if they are, returns the
+        corresponding user object.
+    '''
     user = User.query.filter(User.username == username).first()
     if check_user_credentials(user, password):
         return user

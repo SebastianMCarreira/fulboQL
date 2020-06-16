@@ -5,10 +5,22 @@ from app.models.fulboQL import Highlight, MatchMoment, OnGoal, Restart, Substitu
 from app.models.timestamp import TimeStamp
 
 def validate_required_properties(cls, request):
+    '''
+        Validates that the request received has all of the properties required to
+        create the given object.
+    '''
     if not cls.verifyProperties(request.json):
         return abort(400, "Required properties: "+", ".join(cls.required_properties))
 
 def validate_players_inside_of_match(match, timestamp, players, teams=None):
+    '''
+        Validates that a list of players was present inside of the match (not in the
+        substitutes bench) at the given timestamp.
+        The parameters match, players and teams can be either the ids of the corresponding
+        objects (which will be searched in the DB to be converted to the objects) or the
+        objects themselves if the code that invoked this function already had access to
+        them to prevent unnecessary queries.
+    '''
     if type(match) is int:
         match = Match.query.filter(Match.id == match).first()
     if type(players[0]) is int:
@@ -20,6 +32,14 @@ def validate_players_inside_of_match(match, timestamp, players, teams=None):
     return match, teams, players
 
 def validate_player_inside_of_match(match, timestamp, player, teams=None, as_substitute=False):
+    '''
+        Validates that a given player was present in the match at the given timestamp (either
+        at the substitute bench or inside the field).
+        The parameters match, player and teams can be either the ids of the corresponding
+        objects (which will be searched in the DB to be converted to the objects) or the
+        objects themselves if the code that invoked this function already had access to
+        them to prevent unnecessary queries.
+    '''
     if type(match) is int:
         match = Match.query.filter(Match.id == match).first()
     if type(player) is int:
@@ -58,6 +78,12 @@ def validate_player_inside_of_match(match, timestamp, player, teams=None, as_sub
     return match, teams, player
 
 def validate_players_teams(players, different_teams=False):
+    '''
+        Validates that two players belong to either the same team or different teams (as decided by
+        the different_teams flag).
+    '''
+    if len(players) != 2:
+        raise ValueError("The players touple must have exactly 2 items.")
     if type(players[0]) is int:
         players = Player.query.filter(Player.id.in_(players))
     if different_teams and players[0].club_id == players[1].club_id:

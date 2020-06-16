@@ -36,6 +36,7 @@ def create_app(extra_config_settings={}):
     # Setup Flask-Migrate
     migrate.init_app(app, db)
 
+    # Setup Flask-Login
     login.init_app(app)
 
     # Register blueprints
