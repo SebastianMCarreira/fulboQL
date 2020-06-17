@@ -25,3 +25,21 @@ MAIL_USE_SSL = False
 MAIL_USE_TLS = True
 MAIL_USERNAME = 'yourname@gmail.com'
 MAIL_PASSWORD = 'password'
+
+
+INITIAL_USERS = {
+    'admin':{
+        'username':'admin',
+        'password':'Password123$',
+        'email':'',
+        'fname':'Fulbo',
+        'lname':'QL'
+    },
+    'user':{
+        'username':'',
+        'password':'',
+        'email':'',
+        'fname':'',
+        'lname':''
+    }
+}

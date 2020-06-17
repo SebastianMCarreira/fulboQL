@@ -39,8 +39,21 @@ def create_users():
     user_role = find_or_create_role('user', u'User')
 
     # Add users
-    generate_new_user("admin","Password123$","fulboql@gmail.com","Fulbo","QL", role=admin_role)
-    generate_new_user("scarreira","Password123$","sebastian.m.carreira@gmail.com","Sebastian","Carreira")
+    # Admin
+    generate_new_user(
+        current_app.config["INITIAL_USERS"]["admin"]["username"],
+        current_app.config["INITIAL_USERS"]["admin"]["password"],
+        current_app.config["INITIAL_USERS"]["admin"]["email"],
+        current_app.config["INITIAL_USERS"]["admin"]["fname"],
+        current_app.config["INITIAL_USERS"]["admin"]["lname"], 
+        role=admin_role)
+    # Normal user
+    generate_new_user(
+        current_app.config["INITIAL_USERS"]["user"]["username"],
+        current_app.config["INITIAL_USERS"]["user"]["password"],
+        current_app.config["INITIAL_USERS"]["user"]["email"],
+        current_app.config["INITIAL_USERS"]["user"]["fname"],
+        current_app.config["INITIAL_USERS"]["user"]["lname"])
 
     # Save to DB
     db.session.commit()
