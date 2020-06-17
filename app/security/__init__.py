@@ -91,6 +91,8 @@ def get_user_from_credentials(username, password):
         corresponding user object.
     '''
     user = User.query.filter(User.username == username).first()
+    if not user:
+        abort(404, "User not found")
     if check_user_credentials(user, password):
         return user
     else:
