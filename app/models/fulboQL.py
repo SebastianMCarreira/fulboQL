@@ -148,10 +148,11 @@ class Match(db.Model, ApiModel):
     teamA = db.Column(db.Integer(), db.ForeignKey('teams.id'))
     teamB = db.Column(db.Integer(), db.ForeignKey('teams.id'))
     dateOfStart = db.Column(db.DateTime())
-    referee = db.Column(db.Integer(), db.ForeignKey('referees.id'))
+    referee_id = db.Column(db.Integer(), db.ForeignKey('referees.id'))
+    referee = db.relationship('Referee')
     events = db.relationship('Event')
 
-    required_properties = ["teamA","teamB","dateOfStart","referee"]
+    required_properties = ["teamA","teamB","dateOfStart","referee_id"]
 
     @property
     def serialized(self):
@@ -161,7 +162,7 @@ class Match(db.Model, ApiModel):
             'teamA': db.session.query(Team).filter(Team.id==self.teamA)[0].serialized,
             'teamB': db.session.query(Team).filter(Team.id==self.teamB)[0].serialized,
             'dateOfStart': self.dateOfStart.strftime("%Y/%m/%d %H:%M"),
-            'referee': self.referee
+            'referee': self.referee.serialized
         }
 
 class Event(db.Model, ApiModel):

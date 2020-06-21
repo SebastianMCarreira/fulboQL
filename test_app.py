@@ -387,7 +387,7 @@ match = post("{}/api/match/".format(URL), json={
 	"teamA": riverTeam["id"],
 	"teamB": bocaTeam["id"],
 	"dateOfStart": "2018/12/09 16:40:00",
-	"referee": cunha["id"]
+	"referee_id": cunha["id"]
 }, cookies=cookies).json()
 
 ######## EVENTS ########
