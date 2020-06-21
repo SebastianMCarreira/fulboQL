@@ -12,7 +12,7 @@ HEADERS = {"Accept":"application/json","Content-Type":"application/json"}
 
 ######## LOGIN ########
 
-session = post("{}/login/".format(URL), json={
+session = post("{}/api/login/".format(URL), json={
     "username":USERNAME,
     "password":PASSWORD
 }).cookies["session"]
@@ -441,7 +441,7 @@ def injury(timestamp, player, severity):
 	}, cookies=cookies)
 
 
-if True:
+if False:
 	matchmoment("0:00","FIRSTTIMESTART")
 
 	foul("0:41","WARNING","VIOLENTKICK",pratto,victim=perez)

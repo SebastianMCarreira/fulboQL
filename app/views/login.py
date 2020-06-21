@@ -8,7 +8,7 @@ from app.models.fulboQL import Highlight, MatchMoment, OnGoal, Restart, Substitu
 from app.security import get_user_from_credentials
 login_blueprint = Blueprint('login', __name__)
 
-@login_blueprint.route("/login/", methods=["POST"])
+@login_blueprint.route("/api/login/", methods=["POST"])
 def login():
     user = get_user_from_credentials(request.json["username"],request.json["password"])
     if user:

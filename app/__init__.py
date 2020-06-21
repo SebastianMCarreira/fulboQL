@@ -4,7 +4,7 @@
 from datetime import datetime
 import os
 
-from flask import Flask
+from flask import Flask, request
 from flask_script import Manager
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate, MigrateCommand
@@ -45,5 +45,14 @@ def create_app(extra_config_settings={}):
 
     # Setup Flask-User to handle user account related forms
     from .models.user_models import User
+
+    @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Origin', request.headers["Origin"])
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+
 
     return app
