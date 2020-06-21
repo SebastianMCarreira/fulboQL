@@ -117,6 +117,13 @@ def clubId(id):
         return jsonify({'message': 'club deleted'}), 200
 
 
+@api_blueprint.route('/api/club/<id>/players/')
+@login_required
+def club_player(id):
+    club = db.session.query(Club).filter(Club.id == id)[0]
+    players = [player.serialized for player in club.players] if club.players else []
+    return jsonify(players), 200
+
 @api_blueprint.route('/api/club/<id>/addplayer/<player_id>/', methods=['PUT'])
 @login_required
 def club_add_player(id, player_id):
@@ -176,7 +183,7 @@ def team():
     if request.method == 'POST':
         validate_required_properties(Team,request)
         club = db.session.query(Club).filter(Club.id == request.json['club'])[0]
-        new_team = Team(club=(request.json['club']),
+        new_team = Team(club_id=(request.json['club']),
           manager=(request.json['manager']))
         titulars = filter(lambda x: x.id in request.json['titulars'], club.players)
         substitutes = filter(lambda x: x.id in request.json['substitutes'], club.players)
@@ -209,6 +216,15 @@ def teamId(id):
         db.session.delete(team)
         db.session.commit()
         return jsonify({'message': 'team deleted'}), 200
+
+@api_blueprint.route('/api/team/<id>/players/')
+@login_required
+def team_players(id):
+    team = db.session.query(Team).filter(Team.id == id)[0]
+    return jsonify({
+        'titulars': [player.serialized for player in team.titulars] if team.titulars else [],
+        'substitutes': [player.serialized for player in team.substitutes] if team.substitutes else []
+    }), 200
 
 # match
 @api_blueprint.route('/api/match/', methods=['GET', 'POST'])

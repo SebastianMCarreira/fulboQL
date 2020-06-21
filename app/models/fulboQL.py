@@ -33,7 +33,6 @@ class Club(db.Model, ApiModel):
             'name': self.name,
             'stadium': self.stadium,
             'city': self.city,
-            'players': [player.serialized for player in self.players] if self.players else [],
             'manager': self.manager.serialized if self.manager else None
         }
 
@@ -118,7 +117,8 @@ class PlayersTeamsSubs(db.Model):
 class Team(db.Model, ApiModel):
     __tablename__ = 'teams'
     id = db.Column(db.Integer(), primary_key=True)
-    club = db.Column(db.Integer(), db.ForeignKey('clubs.id'))
+    club_id = db.Column(db.Integer(), db.ForeignKey('clubs.id'))
+    club = db.relationship("Club")
     manager = db.Column(db.Integer(), db.ForeignKey('managers.id'))
     titulars = db.relationship('Player', secondary='players_teams')
     substitutes = db.relationship('Player', secondary='players_teams_substitutes')
@@ -134,10 +134,8 @@ class Team(db.Model, ApiModel):
         """Return object data in serializeable format"""
         return {
             'id': self.id,
-            'club': self.club,
+            'club': self.club.serialized,
             'manager': self.manager,
-            'titulars': [player.serialized for player in self.titulars] if self.titulars else [],
-            'substitutes': [player.serialized for player in self.substitutes] if self.substitutes else []
         }
 
 class Match(db.Model, ApiModel):
