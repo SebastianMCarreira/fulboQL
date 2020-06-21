@@ -17,13 +17,15 @@ class Person():
 class Club(db.Model, ApiModel):
     __tablename__ = 'clubs'
     id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(64), nullable=False, server_default=u'', unique=True)
+    name = db.Column(db.String(32), nullable=False, server_default=u'')
+    full_name = db.Column(db.String(64), nullable=False, server_default=u'')
+    acronym = db.Column(db.String(16), nullable=False, server_default=u'')
     stadium = db.Column(db.Unicode(64), server_default=u'')
     city = db.Column(db.Unicode(64), server_default=u'')
     players = db.relationship('Player')
     manager = db.relationship("Manager", uselist=False, back_populates="club")
 
-    required_properties = ["name","stadium","city"]
+    required_properties = ["name","stadium","city","full_name","acronym"]
 
     @property
     def serialized(self):
@@ -31,6 +33,8 @@ class Club(db.Model, ApiModel):
         return {
             'id': self.id,
             'name': self.name,
+            'full_name': self.full_name,
+            'acronym': self.acronym,
             'stadium': self.stadium,
             'city': self.city,
             'manager': self.manager.serialized if self.manager else None
@@ -156,7 +160,7 @@ class Match(db.Model, ApiModel):
             'id': self.id,
             'teamA': db.session.query(Team).filter(Team.id==self.teamA)[0].serialized,
             'teamB': db.session.query(Team).filter(Team.id==self.teamB)[0].serialized,
-            'dateOfStart': self.dateOfStart,
+            'dateOfStart': self.dateOfStart.strftime("%Y/%m/%d %H:%M"),
             'referee': self.referee
         }
 

@@ -28,13 +28,17 @@ cunha = post("{}/api/referee/".format(URL), json={
 ######## MANAGERS ########
 
 river = post("{}/api/club/".format(URL), json={
-	"name": "Club Atletico River Plate",
+	"name": "River Plate",
+	"full_name": "Club Atletico River Plate",
+	"acronym": "CARP",
 	"stadium": "Estadio Monumental",
 	"city": "Ciudad de Buenos Aires"
 }, cookies=cookies).json()
 
 boca = post("{}/api/club/".format(URL), json={
-	"name": "Club Atletico Boca Juniors",
+	"name": "Boca Juniors",
+	"full_name": "Club Atletico Boca Juniors",
+	"acronym": "CABJ",
 	"stadium": "La Bombonera",
 	"city": "Ciudad de Buenos Aires"
 }, cookies=cookies).json()

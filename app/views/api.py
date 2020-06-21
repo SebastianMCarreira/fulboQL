@@ -84,7 +84,10 @@ def managerId(id):
 def club():
     if request.method == 'POST':
         validate_required_properties(Club, request)
-        new_club = Club(name=(request.json['name']),
+        new_club = Club(
+          name=(request.json['name']),
+          full_name=(request.json['full_name']),
+          acronym=(request.json['acronym']),
           stadium=(request.json['stadium']),
           city=(request.json['city']))
         db.session.add(new_club)
