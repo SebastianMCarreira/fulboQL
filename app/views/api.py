@@ -265,6 +265,37 @@ def matchId(id):
         db.session.commit()
         return jsonify({'message': 'match deleted'}), 200
 
+@api_blueprint.route('/api/match/<id>/players/<timestamp>/')
+@login_required
+def match_players(id, timestamp):
+    match = db.session.query(Match).filter(Match.id == id)[0]
+    teams = Team.query.filter(Team.id.in_((match.teamA,match.teamB)))
+    possible_players = []
+    team_id = int(request.args.get('teamId', default=0))
+    if team_id:
+        teamA = list(filter(lambda x: x.id == match.teamA, teams))[0]
+        teamB = list(filter(lambda x: x.id == match.teamB, teams))[0]
+        if match.teamA == team_id:
+            possible_players = teamA.titulars + teamA.substitutes
+        elif match.teamB == team_id:
+            possible_players = teamB.titulars + teamB.substitutes
+        else:
+            abort(400,'No team has the id {} in the match {}'.format(team_id, id))
+    else:
+        for team in teams:
+            possible_players.extend(team.titulars)
+            possible_players.extend(team.substitutes)
+    
+    players_inside = list(filter(lambda player: validate_player_inside_of_match(
+                                                        match, 
+                                                        timestamp, 
+                                                        player,
+                                                        teams=teams,
+                                                        return_bool=True,
+                                                        as_substitute=request.args.get('as_substitue', default='false')), 
+                                                        possible_players))
+    
+    return json_response(players_inside)
 
 @api_blueprint.route('/api/match/<match_id>/events/')
 @login_required

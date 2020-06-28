@@ -153,7 +153,7 @@ class Match(db.Model, ApiModel):
     events = db.relationship('Event')
 
     required_properties = ["teamA","teamB","dateOfStart","referee_id"]
-
+    
     @property
     def serialized(self):
         """Return object data in serializeable format"""
@@ -291,14 +291,14 @@ class Highlight(db.Model, ApiModel):
 
 
 class MatchMomentType(str, Enum):
-    FIRSTTIMESTART = "FIRSTTIMESTART"
-    SECONTIMESTART = "SECONTIMESTART"
-    FIRSTTIMEEND = "FIRSTTIMEEND"
-    SECONTIMEEND = "SECONTIMEEND"
-    FIRSTEXTRASTART = "FIRSTEXTRASTART"
-    SECONEXTRASTART = "SECONEXTRASTART"
-    FIRSTEXTRAEND = "FIRSTEXTRAEND"
-    SECONEXTRAEND = "SECONEXTRAEND"
+    FIRSTTIMESTART = "FIRSTTIMESTART"   # 0 
+    FIRSTTIMEEND = "FIRSTTIMEEND"       # 1
+    SECONTIMESTART = "SECONTIMESTART"   # 2
+    SECONTIMEEND = "SECONTIMEEND"       # 3
+    FIRSTEXTRASTART = "FIRSTEXTRASTART" # 4
+    FIRSTEXTRAEND = "FIRSTEXTRAEND"     # 5
+    SECONEXTRASTART = "SECONEXTRASTART" # 6
+    SECONEXTRAEND = "SECONEXTRAEND"     # 7
 
 class MatchMoment(db.Model, ApiModel):
     __tablename__ = 'matchmoments'

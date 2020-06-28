@@ -31,7 +31,7 @@ def validate_players_inside_of_match(match, timestamp, players, teams=None):
         validate_player_inside_of_match(match, timestamp, player, teams=teams)
     return match, teams, players
 
-def validate_player_inside_of_match(match, timestamp, player, teams=None, as_substitute=False):
+def validate_player_inside_of_match(match, timestamp, player, teams=None, as_substitute=False, return_bool=False):
     '''
         Validates that a given player was present in the match at the given timestamp (either
         at the substitute bench or inside the field).
@@ -46,11 +46,13 @@ def validate_player_inside_of_match(match, timestamp, player, teams=None, as_sub
         player = Player.query.filter(Player.id == player).first()
     if not teams:
         teams = Team.query.filter(Team.id.in_((match.teamA,match.teamB)))
+    if as_substitute:
+        as_substitute = as_substitute == 'true' or as_substitute is True
 
     team = None
-    if player.club_id == teams[0].club:
+    if player.club_id == teams[0].club_id:
         team = teams[0]
-    elif player.club_id == teams[1].club:
+    elif player.club_id == teams[1].club_id:
         team = teams[1]
     else:
         abort(400, "The player with id {} does not belong to any club in the match with id {}".format(player.id, match.id))
@@ -71,6 +73,11 @@ def validate_player_inside_of_match(match, timestamp, player, teams=None, as_sub
         bench_players_ids.remove(substitution.substitution.inPlayer_id)
         bench_players_ids.append(substitution.substitution.outPlayer_id)
     
+    if return_bool:
+        if as_substitute:
+            return player.id in bench_players_ids
+        return player.id in field_players_ids
+
     if player.id not in field_players_ids and not as_substitute:
         abort(400,"The player with id {} was at the substitute bench at the timestamp {}".format(player.id, timestamp))
     elif player.id not in bench_players_ids and as_substitute:
@@ -82,7 +89,7 @@ def validate_players_teams(players, different_teams=False):
         Validates that two players belong to either the same team or different teams (as decided by
         the different_teams flag).
     '''
-    if len(players) != 2:
+    if len(list(players)) != 2:
         raise ValueError("The players touple must have exactly 2 items.")
     if type(players[0]) is int:
         players = Player.query.filter(Player.id.in_(players))
