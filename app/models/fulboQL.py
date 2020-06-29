@@ -92,6 +92,7 @@ class Player(db.Model, ApiModel, Person):
     surname = db.Column(db.String(50), nullable=False, server_default=u'')
     position = db.Column(db.Enum(PlayerPositions))
     club_id = db.Column(db.Integer(), db.ForeignKey('clubs.id'))
+    club = db.relationship('Club')
 
     required_properties = ["name","surname","position"]
 
@@ -103,7 +104,7 @@ class Player(db.Model, ApiModel, Person):
             'name': self.name,
             'surname': self.surname,
             'position': self.position,
-            'club_id': self.club_id
+            'club': self.club.serialized if self.club else None
         }
 
 class PlayersTeams(db.Model):
@@ -151,6 +152,7 @@ class Match(db.Model, ApiModel):
     referee_id = db.Column(db.Integer(), db.ForeignKey('referees.id'))
     referee = db.relationship('Referee')
     events = db.relationship('Event')
+    closed = db.Column(db.Boolean(), default=False)
 
     required_properties = ["teamA","teamB","dateOfStart","referee_id"]
     
@@ -159,10 +161,46 @@ class Match(db.Model, ApiModel):
         """Return object data in serializeable format"""
         return {
             'id': self.id,
-            'teamA': db.session.query(Team).filter(Team.id==self.teamA)[0].serialized,
-            'teamB': db.session.query(Team).filter(Team.id==self.teamB)[0].serialized,
+            'teamA': self.team_A.serialized,
+            'teamB': self.team_B.serialized,
             'dateOfStart': self.dateOfStart.strftime("%Y/%m/%d %H:%M"),
-            'referee': self.referee.serialized
+            'referee': self.referee.serialized,
+            'closed': self.closed,
+            'canLoadMoreEvents': self.can_log_more_events(),
+            'result': self.result
+        }
+
+    @property
+    def team_A(self):
+        return db.session.query(Team).filter(Team.id==self.teamA)[0]
+    
+    @property
+    def team_B(self):
+        return db.session.query(Team).filter(Team.id==self.teamB)[0]
+
+    def can_log_more_events(self):
+        second_extra_end_event = list(filter(
+            lambda event: event.matchmoment is not None and 
+            event.matchmoment.momentType is MatchMomentType.SECONEXTRAEND,self.events))
+        if second_extra_end_event:
+            return False
+        return True
+
+    @property
+    def result(self):
+        teamAGoals = 0
+        teamBGoals = 0
+        for event in self.events:
+            if event.ongoal and event.ongoal.serialized["goal"]:
+                if event.ongoal.serialized["shooter"]["club"]["id"] == self.team_A.club_id:
+                    teamAGoals += 1
+                elif event.ongoal.serialized["shooter"]["club"]["id"] == self.team_B.club_id:
+                    teamBGoals += 1
+                else:
+                    print("wat??")
+        return {
+            'teamA': teamAGoals,
+            'teamB': teamBGoals
         }
 
 class Event(db.Model, ApiModel):

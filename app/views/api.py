@@ -245,6 +245,25 @@ def match():
     query = db.session.query(Match).all()
     return json_response(query), 200
 
+@api_blueprint.route('/api/match/open/')
+@login_required
+def open_matches():
+    query = db.session.query(Match).filter(Match.closed == False).all()
+    return json_response(query), 200
+
+@api_blueprint.route('/api/match/closed/')
+@login_required
+def closed_matches():
+    query = db.session.query(Match).filter(Match.closed == True).all()
+    return json_response(query), 200
+
+@api_blueprint.route('/api/match/<id>/close/', methods=['PUT'])
+@login_required
+def close_match(id):
+    match = db.session.query(Match).filter(Match.id == id)[0]
+    match.closed = True
+    db.session.commit()
+    return json_response(match), 200
 
 @api_blueprint.route('/api/match/<id>/', methods=['GET', 'PUT', 'DELETE'])
 @login_required
@@ -292,10 +311,16 @@ def match_players(id, timestamp):
                                                         player,
                                                         teams=teams,
                                                         return_bool=True,
-                                                        as_substitute=request.args.get('as_substitue', default='false')), 
+                                                        as_substitute=request.args.get('as_substitute', default='false')), 
                                                         possible_players))
     
     return json_response(players_inside)
+
+@api_blueprint.route('/api/match/<match_id>/can_log_events/')
+@login_required
+def can_log_events(match_id):
+    match = db.session.query(Match).filter(Match.id == match_id)[0]
+    return jsonify(match.can_log_more_events())
 
 @api_blueprint.route('/api/match/<match_id>/events/')
 @login_required

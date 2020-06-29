@@ -445,7 +445,7 @@ def injury(timestamp, player, severity):
 	}, cookies=cookies)
 
 
-if True:
+if False:
 	matchmoment("0:00","FIRSTTIMESTART")
 
 	foul("0:41","WARNING","VIOLENTKICK",pratto,victim=perez)
