@@ -156,7 +156,7 @@ class Match(db.Model, ApiModel):
     events = db.relationship('Event')
     closed = db.Column(db.Boolean(), default=False)
 
-    required_properties = ["teamA","teamB","dateOfStart","referee_id"]
+    required_properties = ["teamA","teamB","dateOfStart","referee"]
     
     @property
     def serialized(self):

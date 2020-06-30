@@ -259,7 +259,7 @@ def match():
         new_match = Match(teamA=(request.json['teamA']),
           teamB=(request.json['teamB']),
           dateOfStart=(request.json['dateOfStart']),
-          referee_id=(request.json['referee_id']))
+          referee_id=(request.json['referee']))
         db.session.add(new_match)
         db.session.commit()
         return json_response(new_match), 201
