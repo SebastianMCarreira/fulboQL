@@ -23,7 +23,7 @@ class Club(db.Model, ApiModel):
     stadium = db.Column(db.Unicode(64), server_default=u'')
     city = db.Column(db.Unicode(64), server_default=u'')
     players = db.relationship('Player')
-    manager = db.relationship("Manager", uselist=False, back_populates="club")
+    manager = db.relationship("Manager", uselist=True, back_populates="club")
 
     required_properties = ["name","stadium","city","full_name","acronym"]
 
@@ -36,8 +36,7 @@ class Club(db.Model, ApiModel):
             'full_name': self.full_name,
             'acronym': self.acronym,
             'stadium': self.stadium,
-            'city': self.city,
-            'manager': self.manager.serialized if self.manager else None
+            'city': self.city
         }
 
 class Manager(db.Model, ApiModel, Person):
@@ -48,7 +47,7 @@ class Manager(db.Model, ApiModel, Person):
     club_id = db.Column(db.Integer(), db.ForeignKey('clubs.id'))
     club = db.relationship("Club", back_populates="manager")
 
-    required_properties = ["name","surname","club"]
+    required_properties = ["name","surname"]
 
     @property
     def serialized(self):
@@ -57,7 +56,8 @@ class Manager(db.Model, ApiModel, Person):
             'id': self.id,
             'name': self.name,
             'surname': self.surname,
-            'club': self.club_id
+            'club': self.club.serialized if self.club else {'name':'No Club'},
+            'fullname': self.full_name
         }
 
 
@@ -75,7 +75,8 @@ class Referee(db.Model, ApiModel, Person):
         return {
             'id': self.id,
             'name': self.name,
-            'surname': self.surname
+            'surname': self.surname,
+            'fullname': self.full_name
         }
 
 
@@ -104,7 +105,8 @@ class Player(db.Model, ApiModel, Person):
             'name': self.name,
             'surname': self.surname,
             'position': self.position,
-            'club': self.club.serialized if self.club else None
+            'fullname': self.full_name,
+            'club': self.club.serialized if self.club else {'name':'No Club'}
         }
 
 class PlayersTeams(db.Model):
@@ -196,8 +198,6 @@ class Match(db.Model, ApiModel):
                     teamAGoals += 1
                 elif event.ongoal.serialized["shooter"]["club"]["id"] == self.team_B.club_id:
                     teamBGoals += 1
-                else:
-                    print("wat??")
         return {
             'teamA': teamAGoals,
             'teamB': teamBGoals

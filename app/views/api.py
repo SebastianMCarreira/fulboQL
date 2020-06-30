@@ -50,8 +50,9 @@ def manager():
         validate_required_properties(Manager, request)
         new_manager = Manager(
             name=(request.json['name']),
-            surname=(request.json['surname']),
-            club_id=(request.json['club']))
+            surname=(request.json['surname']))
+        if 'club' in request.json:
+            new_manager.club_id = request.json['club']
         db.session.add(new_manager)
         db.session.commit()
         return json_response(new_manager), 201
@@ -69,7 +70,8 @@ def managerId(id):
         validate_required_properties(Manager, request)
         manager.name = request.json['name']
         manager.surname = request.json['surname']
-        manager.club_id = request.json['club']
+        if 'club' in request.json:
+            manager.club_id = request.json['club']
         db.session.commit()
         return json_response(manager), 200
     if request.method == 'DELETE':
@@ -127,6 +129,13 @@ def club_player(id):
     players = [player.serialized for player in club.players] if club.players else []
     return jsonify(players), 200
 
+@api_blueprint.route('/api/club/<id>/managers/')
+@login_required
+def club_manager(id):
+    club = db.session.query(Club).filter(Club.id == id)[0]
+    managers = [manager.serialized for manager in club.manager] if club.manager else []
+    return jsonify(managers), 200
+
 @api_blueprint.route('/api/club/<id>/addplayer/<player_id>/', methods=['PUT'])
 @login_required
 def club_add_player(id, player_id):
@@ -139,6 +148,18 @@ def club_add_player(id, player_id):
     else:
         return abort(400, "Player with id {} already belongs to that club.".format(player_id))
 
+@api_blueprint.route('/api/club/<id>/removeplayer/<player_id>/', methods=['DELETE'])
+@login_required
+def club_remove_player(id, player_id):
+    club = db.session.query(Club).filter(Club.id == id)[0]
+    player = db.session.query(Player).filter(Player.id == player_id)[0]
+    if player.club_id == club.id:
+        player.club_id = None
+        db.session.commit()
+        return json_response(club), 201
+    else:
+        return abort(400, "Player with id {} does not belong to that club.".format(player_id))
+
 
 # player
 @api_blueprint.route('/api/player/', methods=['GET', 'POST'])
@@ -150,7 +171,7 @@ def player():
           surname=(request.json['surname']),
           position=(request.json['position']))
         if 'club' in request.json:
-            new_player.club.id = request.json['club_id']
+            new_player.club_id = request.json['club']
         db.session.add(new_player)
         db.session.commit()
         return json_response(new_player), 201
@@ -169,8 +190,8 @@ def playerId(id):
         player.name = request.json['name']
         player.surname = request.json['surname']
         player.position = request.json['position']
-        if 'club_id' in request.json:
-            player.club_id = request.json['club_id']
+        if 'club' in request.json:
+            player.club_id = request.json['club']
         db.session.commit()
         return json_response(player), 200
     if request.method == 'DELETE':
